@@ -24,7 +24,7 @@ def _get_clause_and_remainder(pat):
                 return _get_clause_and_remainder(pat[1:idx])
                 # whole thing surrounded by parentheses, strip them out and reparse
         return []
-    if pat[0] == "+" or pat[0] == "," or pat[0] == "|":
+    if pat[0] == "+" or pat[0] == "*" or pat[0] == "," or pat[0] == "|":
         ret = [pat[0]]
         if pat[1:]:
             ret.append(pat[1:])
@@ -86,6 +86,11 @@ def _tokens_to_json(seq, query):
             "@type": "woql:PathPlus",
             "woql:path_pattern": _tokens_to_json([seq[0]], query),
         }
+    elif seq[1] == "*":  # binds tightest of all
+        return {
+            "@type": "woql:PathStar",
+            "woql:path_pattern": _tokens_to_json([seq[0]], query),
+        }
     elif seq[1][0] == "{":  # binds tightest of all
         meat = seq[1][1:-1].split(",")
         return {
@@ -107,7 +112,7 @@ def _compile_predicate(pp, query):
         pred = pp[1:-1]
         cleaned = (
             "owl:topObjectProperty"
-            if pred == "*"
+            if pred == "."
             else query._clean_path_predicate(pred)
         )
         return {
@@ -125,7 +130,7 @@ def _compile_predicate(pp, query):
         pred = pp[1:]
         cleaned = (
             "owl:topObjectProperty"
-            if pred == "*"
+            if pred == "."
             else query._clean_path_predicate(pred)
         )
         return {
@@ -136,7 +141,7 @@ def _compile_predicate(pp, query):
         pred = pp[:-1]
         cleaned = (
             "owl:topObjectProperty"
-            if pred == "*"
+            if pred == "."
             else query._clean_path_predicate(pred)
         )
         return {"@type": "woql:PathPredicate", "woql:path_predicate": {"@id": cleaned}}
